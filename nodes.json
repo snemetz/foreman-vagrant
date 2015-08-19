@@ -2,7 +2,28 @@
   "nodes": {
     "theforeman.example.com": {
       ":ip": "192.168.35.5",
-      "ports": [],
+      "ports": [
+        {
+          ":host": 6080,
+          ":guest": 80,
+          ":id": "foreman-80"
+        },
+        {
+          ":host": 6443,
+          ":guest": 443,
+          ":id": "foreman-443"
+        },
+        {
+          ":host": 6140,
+          ":guest": 8140,
+          ":id": "puppetmaster"
+        },
+        {
+          ":host": 6444,
+          ":guest": 8443,
+          ":id": "foreman_proxy"
+        }
+      ],
       ":memory": 1024,
       ":box": "chef/centos-6.5",
       ":bootstrap": "bootstrap-foreman.sh"
