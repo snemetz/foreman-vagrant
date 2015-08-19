@@ -37,7 +37,7 @@ else
     # Temp disable firewall untill rules get fixed
     sudo service iptables stop
     sudo service ip6tables stop
-    
+
     # Install Foreman for CentOS 6
     sudo rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm && \
     sudo yum -y erase puppet-agent && \
