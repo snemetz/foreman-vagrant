@@ -3,6 +3,8 @@
 # Run on VM to bootstrap Foreman server
 # Gary A. Stafford - 01/15/2015
 
+foreman_version='1.9'
+
 if ps aux | grep "/usr/share/foreman" | grep -v grep 2> /dev/null
 then
     echo "Foreman appears to all already be installed. Exiting..."
@@ -32,12 +34,16 @@ else
     # Foreman Proxy -- docs say REST, so this should only be TCP
     sudo /sbin/iptables -A INPUT -m state --state NEW -m tcp -p tcp --dport 8443 -j ACCEPT
 
+    # Temp disable firewall untill rules get fixed
+    sudo service iptables stop
+    sudo service ip6tables stop
+    
     # Install Foreman for CentOS 6
     sudo rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm && \
     sudo yum -y erase puppet-agent && \
     sudo rm -f /etc/yum.repos.d/puppetlabs-pc1.repo && \
     sudo yum clean all && \
-    sudo yum -y install epel-release http://yum.theforeman.org/releases/1.8/el6/x86_64/foreman-release.rpm && \
+    sudo yum -y install epel-release http://yum.theforeman.org/releases/${foreman_version}/el6/x86_64/foreman-release.rpm && \
     sudo yum -y install foreman-installer && \
     sudo foreman-installer
 
@@ -45,6 +51,8 @@ else
     # automatically creating the host in Foreman's database
     sudo puppet agent --test --waitforcert=60
 
+    # Install Foreman Providers
+    # Install Foreman Plugins
     # Install some optional puppet modules on Foreman server to get started...
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-ntp
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-git
