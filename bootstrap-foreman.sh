@@ -3,7 +3,7 @@
 # Run on VM to bootstrap Foreman server
 # Gary A. Stafford - 01/15/2015
 
-foreman_version='1.9'
+foreman_version='1.8'
 
 if ps aux | grep "/usr/share/foreman" | grep -v grep 2> /dev/null
 then
@@ -44,15 +44,26 @@ else
     sudo rm -f /etc/yum.repos.d/puppetlabs-pc1.repo && \
     sudo yum clean all && \
     sudo yum -y install epel-release http://yum.theforeman.org/releases/${foreman_version}/el6/x86_64/foreman-release.rpm && \
-    sudo yum -y install foreman-installer && \
-    sudo foreman-installer
+    sudo yum -y install foreman-installer foreman-libvirt && \
+    sudo foreman-installer 
 
     # First run the Puppet agent on the Foreman host which will send the first Puppet report to Foreman,
     # automatically creating the host in Foreman's database
     sudo puppet agent --test --waitforcert=60
 
     # Install Foreman Providers
+    yum -y install foreman-libvirt
     # Install Foreman Plugins
+    yum -y install ruby193-rubygem-foreman_bootdisk ruby193-rubygem-foreman_discovery ruby193-rubygem-foreman_hooks \
+                   ruby193-rubygem-foreman_dhcp_browser ruby193-rubygem-foreman_graphite \
+                   ruby193-rubygem-foreman_templates ruby193-rubygem-foreman-tasks
+    # Broken
+    #  ruby193-rubygem-foreman_openstack_cluster - Look at web doc
+    # NO RPMs, install via gem
+    #  hubot_notify foreman_resources 
+
+    # Setup r10k and sync
+
     # Install some optional puppet modules on Foreman server to get started...
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-ntp
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-git

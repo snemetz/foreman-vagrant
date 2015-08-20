@@ -12,6 +12,9 @@ else
 
     # Install Puppet for CentOS 6
     sudo rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm && \
+    sudo yum -y erase puppet-agent && \
+    sudo rm -f /etc/yum.repos.d/puppetlabs-pc1.repo && \
+    sudo yum clean all && \
     sudo yum -y install puppet
 
     # Add agent section to /etc/puppet/puppet.conf (sets run interval to 120 seconds)
