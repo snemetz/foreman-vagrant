@@ -2,6 +2,7 @@
 
 # Run on VM to bootstrap Foreman server
 # Gary A. Stafford - 01/15/2015
+# Modified - 08/19/2015
 
 foreman_version='1.8'
 
@@ -9,43 +10,32 @@ if ps aux | grep "/usr/share/foreman" | grep -v grep 2> /dev/null
 then
     echo "Foreman appears to all already be installed. Exiting..."
 else
-
     # Update system first
-    sudo yum update -y
+    yum update -y
 
-    # Update iptables
-
-    # HTTP/HTTPS
-    sudo /sbin/iptables -A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
-    sudo /sbin/iptables -A INPUT -m state --state NEW -m tcp -p tcp --dport 443 -j ACCEPT
-
-    # TFTP
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m tcp -p tcp --dport 69 -j ACCEPT
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m udp -p udp --dport 69 -j ACCEPT
-
-    # DHCP
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m udp -p udp --dport 67 -j ACCEPT
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m udp -p udp --dport 68 -j ACCEPT
-
-    # DNS
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m udp -p udp --dport 53 -j ACCEPT
-    sudo /sbin/iptables -A INPUT -i eth0 -m state --state NEW -m tcp -p tcp --dport 53 -j ACCEPT
-
-    # Foreman Proxy -- docs say REST, so this should only be TCP
-    sudo /sbin/iptables -A INPUT -m state --state NEW -m tcp -p tcp --dport 8443 -j ACCEPT
-
-    # Temp disable firewall untill rules get fixed
-    sudo service iptables stop
-    sudo service ip6tables stop
-
-    # Install Foreman for CentOS 6
-    sudo rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm && \
+    # Install Foreman for CentOS 7 && downgrade Puppet from 4.x to 3.8.2
+    # (older version required for Foreman)
+    sudo rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-7.noarch.rpm && \
     sudo yum -y erase puppet-agent && \
     sudo rm -f /etc/yum.repos.d/puppetlabs-pc1.repo && \
     sudo yum clean all && \
-    sudo yum -y install epel-release http://yum.theforeman.org/releases/${foreman_version}/el6/x86_64/foreman-release.rpm && \
-    sudo yum -y install foreman-installer foreman-libvirt && \
-    sudo foreman-installer 
+    sudo yum -y install epel-release http://yum.theforeman.org/releases/1.9/el7/x86_64/foreman-release.rpm && \
+    sudo yum -y install foreman-installer && \
+    sudo foreman-installer
+    
+    # Set-up firewall
+    # https://www.digitalocean.com/community/tutorials/additional-recommended-steps-for-new-centos-7-servers
+    sudo firewall-cmd --permanent --add-service=http
+    sudo firewall-cmd --permanent --add-service=https
+    sudo firewall-cmd --permanent --add-port=69/tcp
+    sudo firewall-cmd --permanent --add-port=67-69/udp
+    sudo firewall-cmd --permanent --add-port=53/tcp
+    sudo firewall-cmd --permanent --add-port=53/udp
+    sudo firewall-cmd --permanent --add-port=8443/tcp
+    sudo firewall-cmd --permanent --add-port=8140/tcp
+
+    sudo firewall-cmd --reload
+    sudo systemctl enable firewalld
 
     # First run the Puppet agent on the Foreman host which will send the first Puppet report to Foreman,
     # automatically creating the host in Foreman's database
@@ -69,7 +59,6 @@ else
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-git
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-vcsrepo
     sudo puppet module install -i /etc/puppet/environments/production/modules garethr-docker
-    sudo puppet module install -i /etc/puppet/environments/production/modules garystafford-fig
     sudo puppet module install -i /etc/puppet/environments/production/modules jfryman-nginx
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-haproxy
     sudo puppet module install -i /etc/puppet/environments/production/modules puppetlabs-apache
